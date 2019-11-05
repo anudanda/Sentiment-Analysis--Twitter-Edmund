@@ -1,0 +1,73 @@
+import nltk
+from nltk.tokenize import RegexpTokenizer
+from nltk.stem import WordNetLemmatizer
+from pandas import *
+from nltk.corpus import stopwords
+
+file=open('path.csv','r')
+reviews=file.readlines()
+review_list=[]
+for review in reviews:
+    tokenizer=RegexpTokenizer(r'\w+')
+    tokens=tokenizer.tokenize(review)
+    lmtzr = WordNetLemmatizer()
+    stopset=set(stopwords.words('english'))
+    filtered_tokens=[]
+    for w in tokens:
+        if w not in stopset:
+            filtered_tokens.append(w)
+    tokenList=[]
+    for tk in filtered_tokens:
+        lemma_tokens=lmtzr.lemmatize(tk.lower())
+        tk = lemma_tokens
+        tokenList.append(tk)
+    review_list.append(tokenList)
+
+car_list = ['lexuses','lexusls','rx','a8','a6','3series','5series','7series','xj','sclass']
+car_dict={}
+    
+for model in car_list:
+    car_dict[model]=[]
+    for review in review_list:
+        senti_words=[]
+        index=-1
+        appearance=review.count(model)
+        if appearance>0:
+            for i in range(appearance):
+                index=review.index(model,index+1)
+                try:
+                    #append 10 words before the appearance of car and 10 words after the car
+                    senti_words=senti_words+review[(index-11):(index-1)]
+               
+                    senti_words=senti_words+review[(index+1):(index+11)]
+              
+                except:
+                    pass
+        car_dict[model].append(senti_words)
+        
+
+sentistrength={}
+senti_file=open('C:\Users\Lexi\Documents\Text Analytics\dictionary.csv','r')
+lines=senti_file.readlines()
+
+for i in lines:
+    line=i.strip()
+    element=line.split(',')
+    sentistrength[element[0]]=int(element[1])
+
+    
+scores_dict={}
+for model in car_dict:
+    senti_scores=[]
+    for words in car_dict[model]:
+        score=0
+        for ww in words:
+           
+            if ww in sentistrength:
+                score=score+sentistrength[ww]
+        senti_scores.append(score)
+    scores_dict[model]=senti_scores
+
+data=DataFrame({'ES':scores_dict['lexuses'],'LS':scores_dict['lexusls'],'RX':scores_dict['rx'],'A8':scores_dict['a8'],'A6':scores_dict['a6'],'3series':scores_dict['3series'],'5series':scores_dict['5series'],'7series':scores_dict['7series'],'XJ':scores_dict['xj'],'Sclass':scores_dict['sclass']})
+data.to_excel('senti_scores.xlsx',sheet_name='senti_scores',index=False)    
+
